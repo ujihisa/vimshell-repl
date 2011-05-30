@@ -75,7 +75,7 @@ function! repl#open()
   if repl#already_p(r)
     call repl#move_to_existing_repl(r)
   else
-    if r.command
+    if r.command != ''
       execute 'VimShellInteractive' r.command
     else
       echo 'No interpreter found'
