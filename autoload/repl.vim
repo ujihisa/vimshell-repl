@@ -14,6 +14,7 @@ function! repl#new()
       break
     endif
   endfor
+  let r.command = get(r, 'command', '')
   return r
 endfunction
 
@@ -74,6 +75,10 @@ function! repl#open()
   if repl#already_p(r)
     call repl#move_to_existing_repl(r)
   else
-    execute 'VimShellInteractive' r.command
+    if r.command
+      execute 'VimShellInteractive' r.command
+    else
+      echo 'No interpreter found'
+    endif
   end
 endfunction
