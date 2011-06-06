@@ -1,45 +1,32 @@
-let s:TRUE = 1
-let s:FALSE = 0
 let s:TABLE = {
-      \ 'ruby': 'irb',
-      \ 'haskell': 'ghci',
-      \ 'javascript': 'node',
+      \ 'ruby': ['irb', '--simple-prompt'],
+      \ 'haskell': ['ghci'],
+      \ 'javascript': ['node'],
       \ }
 
 function! repl#new()
   let r = {}
-  for l:lang in keys(s:TABLE)
-    if &filetype ==# l:lang
-      let r.command = s:TABLE[l:lang]
-      break
-    endif
-  endfor
-  let r.command = get(r, 'command', '')
+  let r.commands = get(s:TABLE, &filetype, [])
+  let r.lookup_the_repl = function('s:lookup_the_repl')
   return r
 endfunction
 
-function! repl#already_p(r)
+function! s:lookup_the_repl() dict
   for i in repl#get_buffer_list()
-    if bufname(i) =~# ('^iexe-' . a:r.command)
-      return s:TRUE
+    if bufname(i) =~# ('^iexe-' . self.commands[0])
+      return {'just': i}
     endif
   endfor
-  return s:FALSE
+  return {'nothing': 0}
 endfunction
 
-function! repl#move_to_existing_repl(r)
-  " assuming it's already_p
-  for i in repl#get_buffer_list()
-    if bufname(i) =~# ('^iexe-' . a:r.command)
-      if bufwinnr(i) > 0
-        execute i . 'wincmd w'
-      else
-        execute i . 'sbuffer'
-      endif
-      return
-    endif
-  endfor
-  echoerr 'assumption error'
+function! repl#move_to_existing_repl(i)
+  if bufwinnr(a:i) > 0
+    execute a:i . 'wincmd w'
+  else
+    execute a:i . 'sbuffer'
+  endif
+  startinsert!
 endfunction
 
 let s:buffer_list = {}
@@ -72,11 +59,12 @@ endfunction
 
 function! repl#open()
   let r = repl#new()
-  if repl#already_p(r)
-    call repl#move_to_existing_repl(r)
+  let maybe = r.lookup_the_repl()
+  if exists('maybe.just')
+    call repl#move_to_existing_repl(maybe.just)
   else
-    if r.command != ''
-      execute 'VimShellInteractive' r.command
+    if r.commands != []
+      execute 'VimShellInteractive' join(r.commands, ' ')
     else
       echo 'No interpreter found'
     endif
