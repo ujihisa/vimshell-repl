@@ -13,7 +13,7 @@ endfunction
 
 function! s:lookup_the_repl() dict
   for i in repl#get_buffer_list()
-    if bufname(i) =~# ('^iexe-' . self.commands[0])
+    if bufname(i) =~# ('^iexe-' . get(self.commands, 0))
       return {'just': i}
     endif
   endfor
